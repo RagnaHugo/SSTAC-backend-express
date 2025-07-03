@@ -22,7 +22,7 @@ const corsOptions = {
       callback(new Error('No permitido por CORS'));
     }
   },
-  credentials: true, // Permitir cookies y credenciales
+  credentials: false, // Permitir cookies y credenciales
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: [
     'Origin',
