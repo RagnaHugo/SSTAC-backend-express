@@ -7,9 +7,6 @@ npm-debug.log*
 .env.local
 .env.production
 
-# Database
-database/*.db
-database/*.db-journal
 
 # Logs
 logs/
