@@ -1,40 +1,31 @@
 const cors = require('cors');
 
+// Configuración CORS más permisiva para debugging
 const corsOptions = {
   origin: function (origin, callback) {
-    console.log('🌐 Origen recibido:', origin);
+    console.log('🌐 CORS - Origen:', origin);
     
-    // Permitir requests sin origin (apps móviles, Postman, etc.)
-    if (!origin) return callback(null, true);
-    
-    const allowedOrigins = [
-      "https://spiffy-peony-c702bd.netlify.app", // Tu frontend en Netlify
-      "http://localhost:3000",
-      "http://localhost:3001",
-      "http://localhost:5000",
-      "http://127.0.0.1:3000",
-      "http://127.0.0.1:5000"
-    ];
-    
-    if (allowedOrigins.indexOf(origin) !== -1) {
-      console.log('✅ Origen permitido:', origin);
-      callback(null, true);
-    } else {
-      console.log('❌ Origen rechazado:', origin);
-      callback(new Error('No permitido por CORS'));
-    }
+    // Permitir TODOS los orígenes mientras debuggeamos
+    callback(null, true);
   },
   credentials: true,
   optionsSuccessStatus: 200,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'HEAD', 'PATCH'],
   allowedHeaders: [
-    'Content-Type', 
-    'Authorization', 
-    'X-Requested-With',
     'Accept',
-    'Origin'
+    'Accept-Language',
+    'Content-Language',
+    'Content-Type',
+    'Authorization',
+    'X-Requested-With',
+    'Origin',
+    'DNT',
+    'User-Agent',
+    'If-Modified-Since',
+    'Cache-Control',
+    'Range'
   ],
-  exposedHeaders: ['Content-Length', 'X-Foo', 'X-Bar']
+  exposedHeaders: ['Content-Length', 'Content-Range']
 };
 
 module.exports = cors(corsOptions);
