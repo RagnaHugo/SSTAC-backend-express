@@ -17,11 +17,14 @@ const validateTarea = [
     .withMessage('ID de desarrollador debe ser un número entero válido')
 ];
 
+
 // Rutas para tareas
 router.get('/', tareaController.getAll);
 router.get('/completadas', tareaController.getCompletadas);
 router.get('/:id', tareaController.getById);
 router.post('/', validateTarea, tareaController.create);
+router.put('/:id/estado', tareaController.updateEstado);     
+router.put('/:id/checklist', tareaController.updateChecklist); 
 router.put('/:id', validateTarea, tareaController.update);
 router.delete('/:id', tareaController.delete);
 
