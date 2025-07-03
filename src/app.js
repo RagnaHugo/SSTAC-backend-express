@@ -28,7 +28,7 @@ app.use(helmet({
   },
 }));
 
-// CORS - DEBE IR PRIMERO
+// CORS - DEBE IR PRIMERO Y SOLO UNA VEZ
 app.use(corsConfig);
 
 // Middleware básico
@@ -40,7 +40,9 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Servir archivos estáticos (para el frontend)
 app.use(express.static(path.join(__dirname, '../public')));
 
-// AGREGAR ESTO - Manejo explícito de CORS para API
+// ❌ REMOVIDO - Estas líneas causaban el conflicto de CORS
+// No mezclar corsConfig con configuración manual
+/*
 app.options('/api/*', (req, res) => {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
@@ -56,7 +58,7 @@ app.use('/api', (req, res, next) => {
   res.header('Access-Control-Allow-Credentials', 'true');
   next();
 });
-
+*/
 
 // Rutas de API
 app.use('/api', apiRoutes);
