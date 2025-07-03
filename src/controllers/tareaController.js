@@ -109,7 +109,53 @@ const tareaController = {
         details: error.message 
       });
     }
+  },
+  // Agrega estos métodos al final de tu tareaController, antes del module.exports:
+
+// PUT /api/tareas/:id
+async update(req, res) {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { id } = req.params;
+    const tarea = await Tarea.update(id, req.body);
+    
+    if (!tarea) {
+      return res.status(404).json({ error: 'Tarea no encontrada' });
+    }
+    
+    res.json(tarea);
+  } catch (error) {
+    res.status(500).json({
+      error: 'Error al actualizar tarea',
+      details: error.message
+    });
   }
+},
+
+// DELETE /api/tareas/:id
+async delete(req, res) {
+  try {
+    const { id } = req.params;
+    const result = await Tarea.delete(id);
+    
+    if (!result) {
+      return res.status(404).json({ error: 'Tarea no encontrada' });
+    }
+    
+    res.json({ message: 'Tarea eliminada exitosamente' });
+  } catch (error) {
+    res.status(500).json({
+      error: 'Error al eliminar tarea',
+      details: error.message
+    });
+  }
+}
 };
+
+
 
 module.exports = tareaController;

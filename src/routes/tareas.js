@@ -1,27 +1,28 @@
 const express = require('express');
 const router = express.Router();
 const { body } = require('express-validator');
-const desarrolladorController = require('../controllers/desarrolladorController');
+const tareaController = require('../controllers/tareaController');
 
-// Validaciones
-const validateDesarrollador = [
-  body('nombre')
-    .isLength({ min: 2, max: 100 })
-    .withMessage('El nombre debe tener entre 2 y 100 caracteres'),
-  body('email')
-    .isEmail()
-    .withMessage('Debe proporcionar un email válido'),
-  body('es_lider')
+// Validaciones para tareas
+const validateTarea = [
+  body('titulo')
+    .isLength({ min: 1, max: 200 })
+    .withMessage('El título debe tener entre 1 y 200 caracteres'),
+  body('descripcion')
     .optional()
-    .isBoolean()
-    .withMessage('es_lider debe ser un valor booleano')
+    .isLength({ max: 500 })
+    .withMessage('La descripción no puede exceder 500 caracteres'),
+  body('desarrollador_id')
+    .isInt({ min: 1 })  // ← CAMBIO AQUÍ
+    .withMessage('ID de desarrollador debe ser un número entero válido')
 ];
 
-// Rutas
-router.get('/', desarrolladorController.getAll);
-router.get('/:id', desarrolladorController.getById);
-router.post('/', validateDesarrollador, desarrolladorController.create);
-router.put('/:id', validateDesarrollador, desarrolladorController.update);
-router.delete('/:id', desarrolladorController.delete);
+// Rutas para tareas
+router.get('/', tareaController.getAll);
+router.get('/completadas', tareaController.getCompletadas);
+router.get('/:id', tareaController.getById);
+router.post('/', validateTarea, tareaController.create);
+router.put('/:id', validateTarea, tareaController.update);
+router.delete('/:id', tareaController.delete);
 
 module.exports = router;
