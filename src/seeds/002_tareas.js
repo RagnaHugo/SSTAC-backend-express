@@ -1,3 +1,4 @@
+// SEED PARA 11 TAREAS DEL PILOTO (30/06 - 03/07/2025)
 exports.seed = async function(knex) {
   // Limpiar tablas relacionadas
   await knex('historial_tareas').del();
@@ -9,7 +10,7 @@ exports.seed = async function(knex) {
   const miercoles02 = new Date('2025-07-02T08:00:00');
   const jueves03 = new Date('2025-07-03T08:00:00');
   
-  // Insertar tareas del piloto
+  // Insertar 11 tareas del piloto
   await knex('tareas').insert([
     // LUNES 30/06 - Tareas que empezaron el lunes
     {
@@ -25,6 +26,7 @@ exports.seed = async function(knex) {
       fecha_envio_pruebas: new Date('2025-06-30T15:00:00'),
       fecha_completada: new Date('2025-06-30T17:30:00'),
       tiempo_total_dias: 1.0,
+      ciclos_retrabajo: 0, // ✅ Sin retrabajo
       checklist_completado: true,
       checklist_data: JSON.stringify([
         {"label": "Grid ScriptCase configurado correctamente", "checked": true},
@@ -47,7 +49,7 @@ exports.seed = async function(knex) {
       fecha_inicio_codificacion: new Date('2025-06-30T09:00:00'),
       fecha_envio_pruebas: new Date('2025-06-30T16:00:00'),
       fecha_inicio_retrabajo: new Date('2025-07-01T10:00:00'),
-      ciclos_retrabajo: 1
+      ciclos_retrabajo: 1 // ✅ Con retrabajo
     },
     
     {
@@ -59,7 +61,8 @@ exports.seed = async function(knex) {
       estado: 'codificando',
       prioridad: 'media',
       fecha_creacion: lunes30,
-      fecha_inicio_codificacion: new Date('2025-06-30T10:00:00')
+      fecha_inicio_codificacion: new Date('2025-06-30T10:00:00'),
+      ciclos_retrabajo: 0 // ✅ Sin retrabajo
     },
     
     // MARTES 01/07 - Nuevas tareas y evolución
@@ -74,6 +77,7 @@ exports.seed = async function(knex) {
       fecha_creacion: martes01,
       fecha_inicio_codificacion: new Date('2025-07-01T08:30:00'),
       fecha_envio_pruebas: new Date('2025-07-01T14:00:00'),
+      ciclos_retrabajo: 0, // ✅ Sin retrabajo
       checklist_completado: true,
       checklist_data: JSON.stringify([
         {"label": "Conexión BD optimizada", "checked": true},
@@ -92,7 +96,8 @@ exports.seed = async function(knex) {
       desarrollador_id: 7, // Bruce Cardenas
       estado: 'pendiente',
       prioridad: 'media',
-      fecha_creacion: martes01
+      fecha_creacion: martes01,
+      ciclos_retrabajo: 0 // ✅ Sin retrabajo
     },
     
     {
@@ -108,6 +113,7 @@ exports.seed = async function(knex) {
       fecha_envio_pruebas: new Date('2025-07-01T16:30:00'),
       fecha_completada: new Date('2025-07-02T11:00:00'),
       tiempo_total_dias: 1.5,
+      ciclos_retrabajo: 1, // ✅ Con retrabajo
       checklist_completado: true,
       checklist_data: JSON.stringify([
         {"label": "Validación de tamaño implementada", "checked": true},
@@ -124,11 +130,12 @@ exports.seed = async function(knex) {
       codigo: 'REG-007',
       titulo: 'Grid de Historial de Actividades',
       descripcion: 'Desarrollar grid para mostrar historial completo de actividades del usuario',
-      desarrollador_id: 4, // Diego de la Cruz (después del retrabajo)
+      desarrollador_id: 4, // Diego de la Cruz
       estado: 'codificando',
       prioridad: 'baja',
       fecha_creacion: miercoles02,
-      fecha_inicio_codificacion: new Date('2025-07-02T13:00:00')
+      fecha_inicio_codificacion: new Date('2025-07-02T13:00:00'),
+      ciclos_retrabajo: 0 // ✅ Sin retrabajo
     },
     
     {
@@ -143,7 +150,7 @@ exports.seed = async function(knex) {
       fecha_inicio_codificacion: new Date('2025-07-02T08:30:00'),
       fecha_envio_pruebas: new Date('2025-07-02T15:00:00'),
       fecha_inicio_retrabajo: new Date('2025-07-03T09:00:00'),
-      ciclos_retrabajo: 1
+      ciclos_retrabajo: 1 // ✅ Con retrabajo
     },
     
     // JUEVES 03/07 - Cierre del piloto
@@ -158,7 +165,8 @@ exports.seed = async function(knex) {
       fecha_creacion: jueves03,
       fecha_inicio_codificacion: new Date('2025-07-03T08:00:00'),
       fecha_envio_pruebas: new Date('2025-07-03T16:00:00'),
-      checklist_completado: false
+      checklist_completado: false,
+      ciclos_retrabajo: 0 // ✅ Sin retrabajo
     },
     
     {
@@ -174,6 +182,7 @@ exports.seed = async function(knex) {
       fecha_envio_pruebas: new Date('2025-07-03T14:00:00'),
       fecha_completada: new Date('2025-07-03T17:00:00'),
       tiempo_total_dias: 1.0,
+      ciclos_retrabajo: 0, // ✅ Sin retrabajo
       checklist_completado: true,
       checklist_data: JSON.stringify([
         {"label": "Consultas identificadas y documentadas", "checked": true},
@@ -182,10 +191,35 @@ exports.seed = async function(knex) {
         {"label": "Pruebas de rendimiento realizadas", "checked": true},
         {"label": "Documentación actualizada", "checked": true}
       ])
+    },
+
+    // 🆕 TAREA 11 - Nueva tarea agregada
+    {
+      id: 11,
+      codigo: 'REG-011',
+      titulo: 'Integración API Externa de Geolocalización',
+      descripcion: 'Conectar con API de Google Maps para validar direcciones automáticamente',
+      desarrollador_id: 7, // Bruce Cardenas
+      estado: 'completada',
+      prioridad: 'media',
+      fecha_creacion: jueves03,
+      fecha_inicio_codificacion: new Date('2025-07-03T10:00:00'),
+      fecha_envio_pruebas: new Date('2025-07-03T15:30:00'),
+      fecha_completada: new Date('2025-07-03T18:00:00'),
+      tiempo_total_dias: 1.0,
+      ciclos_retrabajo: 1, // ✅ Con retrabajo
+      checklist_completado: true,
+      checklist_data: JSON.stringify([
+        {"label": "API key configurada correctamente", "checked": true},
+        {"label": "Manejo de errores de red", "checked": true},
+        {"label": "Validación de respuestas", "checked": true},
+        {"label": "Cache implementado", "checked": false},
+        {"label": "Pruebas con direcciones reales", "checked": true}
+      ])
     }
   ]);
   
-  // Insertar historial de cambios de estado
+  // Insertar historial de cambios de estado para las 11 tareas
   await knex('historial_tareas').insert([
     // REG-001 (Hugo) - Completada exitosamente
     { tarea_id: 1, estado_anterior: null, estado_nuevo: 'pendiente', fecha_cambio: lunes30, usuario_id: 3 },
@@ -211,10 +245,13 @@ exports.seed = async function(knex) {
     // REG-005 (Bruce) - Pendiente
     { tarea_id: 5, estado_anterior: null, estado_nuevo: 'pendiente', fecha_cambio: martes01, usuario_id: 7 },
     
-    // REG-006 (Farith) - Completada
+    // REG-006 (Farith) - Completada con retrabajo
     { tarea_id: 6, estado_anterior: null, estado_nuevo: 'pendiente', fecha_cambio: martes01, usuario_id: 8 },
     { tarea_id: 6, estado_anterior: 'pendiente', estado_nuevo: 'codificando', fecha_cambio: new Date('2025-07-01T09:00:00'), usuario_id: 8 },
     { tarea_id: 6, estado_anterior: 'codificando', estado_nuevo: 'en_pruebas', fecha_cambio: new Date('2025-07-01T16:30:00'), usuario_id: 8 },
+    { tarea_id: 6, estado_anterior: 'en_pruebas', estado_nuevo: 're_trabajo', fecha_cambio: new Date('2025-07-02T09:00:00'), usuario_id: 2, comentarios: 'Error en validación de tamaños de archivo' },
+    { tarea_id: 6, estado_anterior: 're_trabajo', estado_nuevo: 'codificando', fecha_cambio: new Date('2025-07-02T09:30:00'), usuario_id: 8 },
+    { tarea_id: 6, estado_anterior: 'codificando', estado_nuevo: 'en_pruebas', fecha_cambio: new Date('2025-07-02T10:30:00'), usuario_id: 8 },
     { tarea_id: 6, estado_anterior: 'en_pruebas', estado_nuevo: 'completada', fecha_cambio: new Date('2025-07-02T11:00:00'), usuario_id: 2 },
     
     // REG-007 (Diego) - En desarrollo
@@ -236,6 +273,15 @@ exports.seed = async function(knex) {
     { tarea_id: 10, estado_anterior: null, estado_nuevo: 'pendiente', fecha_cambio: jueves03, usuario_id: 6 },
     { tarea_id: 10, estado_anterior: 'pendiente', estado_nuevo: 'codificando', fecha_cambio: new Date('2025-07-03T08:30:00'), usuario_id: 6 },
     { tarea_id: 10, estado_anterior: 'codificando', estado_nuevo: 'en_pruebas', fecha_cambio: new Date('2025-07-03T14:00:00'), usuario_id: 6 },
-    { tarea_id: 10, estado_anterior: 'en_pruebas', estado_nuevo: 'completada', fecha_cambio: new Date('2025-07-03T17:00:00'), usuario_id: 1 }
+    { tarea_id: 10, estado_anterior: 'en_pruebas', estado_nuevo: 'completada', fecha_cambio: new Date('2025-07-03T17:00:00'), usuario_id: 1 },
+    
+    // 🆕 REG-011 (Bruce) - Completada con retrabajo
+    { tarea_id: 11, estado_anterior: null, estado_nuevo: 'pendiente', fecha_cambio: jueves03, usuario_id: 7 },
+    { tarea_id: 11, estado_anterior: 'pendiente', estado_nuevo: 'codificando', fecha_cambio: new Date('2025-07-03T10:00:00'), usuario_id: 7 },
+    { tarea_id: 11, estado_anterior: 'codificando', estado_nuevo: 'en_pruebas', fecha_cambio: new Date('2025-07-03T15:30:00'), usuario_id: 7 },
+    { tarea_id: 11, estado_anterior: 'en_pruebas', estado_nuevo: 're_trabajo', fecha_cambio: new Date('2025-07-03T16:30:00'), usuario_id: 1, comentarios: 'API key no configurada correctamente en producción' },
+    { tarea_id: 11, estado_anterior: 're_trabajo', estado_nuevo: 'codificando', fecha_cambio: new Date('2025-07-03T17:00:00'), usuario_id: 7 },
+    { tarea_id: 11, estado_anterior: 'codificando', estado_nuevo: 'en_pruebas', fecha_cambio: new Date('2025-07-03T17:30:00'), usuario_id: 7 },
+    { tarea_id: 11, estado_anterior: 'en_pruebas', estado_nuevo: 'completada', fecha_cambio: new Date('2025-07-03T18:00:00'), usuario_id: 1 }
   ]);
 };

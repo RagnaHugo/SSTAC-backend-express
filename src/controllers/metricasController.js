@@ -57,7 +57,7 @@ const metricasController = {
         promedioRetrabajos = totalRetrabajos / tareasRecientes.length;
       }
 
-      // 🔥 3. CÁLCULO DINÁMICO DE LAMBDA Y MU BASADO EN DATOS REALES DEL PROYECTO ACTUAL
+      // CALCULO DINÁMICO DE LAMBDA Y MU BASADO EN DATOS REALES DEL PROYECTO ACTUAL
       
       // Obtener desarrolladores activos
       const desarrolladoresActivos = await db('desarrolladores')
@@ -186,7 +186,7 @@ const metricasController = {
             Math.round((lambdaDinamica - (servidoresActivos * muDinamica)) * 1000) / 1000 : 0
         },
 
-        // 🆕 VALORES DE REFERENCIA (del informe - solo para comparar)
+        
         valores_referencia: {
           proyecto_scrum_ejemplo: {
             lambda: 1.246,
