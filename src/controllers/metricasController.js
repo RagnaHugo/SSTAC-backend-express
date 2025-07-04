@@ -57,39 +57,150 @@ const metricasController = {
         promedioRetrabajos = totalRetrabajos / tareasRecientes.length;
       }
 
-      // 3. Cálculo de utilización del sistema (según tu informe)
+      // 🔥 3. CÁLCULO DINÁMICO DE LAMBDA Y MU BASADO EN DATOS REALES DEL PROYECTO ACTUAL
+      
+      // Obtener desarrolladores activos
       const desarrolladoresActivos = await db('desarrolladores')
         .where('activo', true)
         .count('* as count')
         .first();
-
       const servidoresActivos = desarrolladoresActivos.count;
-      const lambdaLlegadas = 0.6; // 3 tareas/semana ÷ 5 días
-      const muServicio = 0.222;   // 1 tarea ÷ 4.5 días promedio
 
+      // 🆕 CALCULAR LAMBDA (tasa de llegada) dinámicamente
+      const fechaPrimeraYUltimaTarea = await db('tareas')
+        .select(
+          db.raw('MIN(fecha_creacion) as primera_fecha'),
+          db.raw('MAX(fecha_creacion) as ultima_fecha'),
+          db.raw('COUNT(*) as total_tareas')
+        )
+        .first();
+
+      let lambdaDinamica = 0;
+      let periodoObservacion = 0;
+      let comentarioLambda = "Sin datos suficientes";
+
+      if (fechaPrimeraYUltimaTarea.primera_fecha && fechaPrimeraYUltimaTarea.ultima_fecha) {
+        const fechaInicio = new Date(fechaPrimeraYUltimaTarea.primera_fecha);
+        const fechaFin = new Date(fechaPrimeraYUltimaTarea.ultima_fecha);
+        periodoObservacion = Math.max(1, (fechaFin - fechaInicio) / (1000 * 60 * 60 * 24)); // días
+        
+        lambdaDinamica = fechaPrimeraYUltimaTarea.total_tareas / periodoObservacion;
+        comentarioLambda = `${fechaPrimeraYUltimaTarea.total_tareas} tareas en ${Math.round(periodoObservacion)} días`;
+      }
+
+      // 🆕 CALCULAR MU (tasa de servicio) dinámicamente
+      const tareasCompletadasConTiempo = await db('tareas')
+        .where('estado', 'completada')
+        .whereNotNull('tiempo_total_dias')
+        .select('tiempo_total_dias', 'desarrollador_id');
+
+      let muDinamica = 0;
+      let comentarioMu = "Sin datos de tareas completadas";
+
+      if (tareasCompletadasConTiempo.length > 0 && servidoresActivos > 0) {
+        // Tiempo promedio para completar una tarea
+        const tiempoPromedioCompletacion = tareasCompletadasConTiempo
+          .reduce((sum, t) => sum + t.tiempo_total_dias, 0) / tareasCompletadasConTiempo.length;
+        
+        // Mu = 1 / tiempo_promedio (tareas por día por desarrollador)
+        muDinamica = 1 / tiempoPromedioCompletacion;
+        comentarioMu = `1 tarea cada ${Math.round(tiempoPromedioCompletacion * 100) / 100} días por desarrollador`;
+      }
+
+      // 🆕 CALCULAR INTENSIDAD DEL SISTEMA (RHO) dinámicamente
       let utilizacionSistema = 0;
       let sistemaEstable = false;
 
-      if (servidoresActivos > 0) {
-        utilizacionSistema = lambdaLlegadas / (servidoresActivos * muServicio);
+      if (servidoresActivos > 0 && muDinamica > 0) {
+        utilizacionSistema = lambdaDinamica / (servidoresActivos * muDinamica);
         sistemaEstable = utilizacionSistema < 1.0;
       }
 
+      // 🆕 MÉTRICAS ADICIONALES DE RETRABAJO
+      const totalTareasHistoricas = await db('tareas').count('* as count').first();
+      const tareasConRetrabajoTotal = await db('tareas')
+        .where('ciclos_retrabajo', '>', 0)
+        .count('* as count')
+        .first();
+      
+      const tasaRetrabajoHistorica = totalTareasHistoricas.count > 0 
+        ? (tareasConRetrabajoTotal.count / totalTareasHistoricas.count) * 100 
+        : 0;
+
+      // 🆕 DETECTAR CONTEXTO DEL PROYECTO
+      let contextoProyecto = "Proyecto en curso";
+      if (periodoObservacion <= 7) {
+        contextoProyecto = "Piloto/Sprint corto";
+      } else if (periodoObservacion >= 60) {
+        contextoProyecto = "Proyecto largo plazo";
+      }
+
       const metricas = {
+        // Métricas básicas
         tareas_por_estado: estadosCompletos,
         tiempo_ciclo_promedio: Math.round(tiempoPromedioTotal * 100) / 100,
         tasa_retrabajo: Math.round(tasaRetrabajo * 10) / 10,
+        tasa_retrabajo_historica: Math.round(tasaRetrabajoHistorica * 10) / 10,
         ciclos_retrabajo_promedio: Math.round(promedioRetrabajos * 100) / 100,
+        
+        // 🔥 MÉTRICAS DINÁMICAS DE TEORÍA DE COLAS
         utilizacion_sistema: Math.round(utilizacionSistema * 1000) / 1000,
         sistema_estable: sistemaEstable,
-        total_tareas_completadas: totalTareasCompletadas,
-        desarrolladores_activos: servidoresActivos,
+        periodo_observacion_dias: Math.round(periodoObservacion * 10) / 10,
         
-        // Parámetros de teoría de colas para referencia
+        // Contadores
+        total_tareas_completadas: totalTareasCompletadas,
+        total_tareas_sistema: totalTareasHistoricas.count,
+        desarrolladores_activos: servidoresActivos,
+        contexto_proyecto: contextoProyecto,
+        
+        // 🔥 INTERPRETACIÓN AUTOMÁTICA DEL ESTADO DEL SISTEMA
+        interpretacion: {
+          estado: utilizacionSistema >= 1.5 ? 'CRÍTICO' : 
+                  utilizacionSistema >= 1.0 ? 'INESTABLE' : 
+                  utilizacionSistema >= 0.8 ? 'SATURADO' : 'ESTABLE',
+          mensaje: utilizacionSistema >= 1.5 ? 
+            `Sistema críticamente sobrecargado (${Math.round(utilizacionSistema * 100)}%). Requiere intervención inmediata.` :
+            utilizacionSistema >= 1.0 ? 
+            `Sistema inestable (${Math.round(utilizacionSistema * 100)}%). La demanda supera la capacidad.` :
+            utilizacionSistema >= 0.8 ? 
+            `Sistema saturado (${Math.round(utilizacionSistema * 100)}%). Próximo a la inestabilidad.` :
+            `Sistema estable (${Math.round(utilizacionSistema * 100)}%). Capacidad adecuada.`,
+          color: utilizacionSistema >= 1.5 ? 'red' : 
+                 utilizacionSistema >= 1.0 ? 'orange' : 
+                 utilizacionSistema >= 0.8 ? 'yellow' : 'green',
+          recomendacion: utilizacionSistema >= 1.0 ? 
+            "Implementar mejoras de proceso para reducir retrabajo y aumentar eficiencia." :
+            "Sistema funcionando dentro de parámetros normales."
+        },
+        
+        // 🔥 PARÁMETROS DINÁMICOS DE TEORÍA DE COLAS
         parametros_colas: {
-          lambda: lambdaLlegadas,
-          mu: muServicio,
-          servidores: servidoresActivos
+          lambda: Math.round(lambdaDinamica * 1000) / 1000,
+          mu: Math.round(muDinamica * 1000) / 1000,
+          servidores: servidoresActivos,
+          explicacion_lambda: comentarioLambda,
+          explicacion_mu: comentarioMu,
+          capacidad_teorica: Math.round((servidoresActivos * muDinamica) * 1000) / 1000,
+          deficit_capacidad: utilizacionSistema > 1 ? 
+            Math.round((lambdaDinamica - (servidoresActivos * muDinamica)) * 1000) / 1000 : 0
+        },
+
+        // 🆕 VALORES DE REFERENCIA (del informe - solo para comparar)
+        valores_referencia: {
+          proyecto_scrum_ejemplo: {
+            lambda: 1.246,
+            mu: 0.307,
+            rho: 1.51,
+            descripcion: "Proyecto Scrum ejemplo del informe (98 días, 81 tareas)"
+          },
+          piloto_ejemplo: {
+            lambda: 2.5,
+            mu: 0.167,
+            rho: 2.5,
+            descripcion: "Piloto ejemplo del informe (4 días, 10 tareas)"
+          },
+          nota: "Estos son valores de referencia del informe. Los valores actuales se calculan dinámicamente."
         }
       };
 
@@ -120,6 +231,44 @@ const metricasController = {
     } catch (error) {
       res.status(500).json({ 
         error: 'Error al obtener historial',
+        details: error.message 
+      });
+    }
+  },
+
+  // 🆕 GET /api/metricas/tendencias - Para análisis temporal
+  async getTendencias(req, res) {
+    try {
+      const { dias = 30 } = req.query;
+      
+      // Análisis de tendencias por semana
+      const tendencias = await db('tareas')
+        .select(
+          db.raw('DATE(fecha_creacion) as fecha'),
+          db.raw('COUNT(*) as tareas_creadas')
+        )
+        .where('fecha_creacion', '>=', db.raw(`datetime('now', '-${dias} days')`))
+        .groupBy('fecha')
+        .orderBy('fecha');
+
+      const completadas = await db('tareas')
+        .select(
+          db.raw('DATE(fecha_completada) as fecha'),
+          db.raw('COUNT(*) as tareas_completadas')
+        )
+        .where('fecha_completada', '>=', db.raw(`datetime('now', '-${dias} days')`))
+        .whereNotNull('fecha_completada')
+        .groupBy('fecha')
+        .orderBy('fecha');
+
+      res.json({
+        tareas_creadas: tendencias,
+        tareas_completadas: completadas,
+        periodo_dias: dias
+      });
+    } catch (error) {
+      res.status(500).json({ 
+        error: 'Error al calcular tendencias',
         details: error.message 
       });
     }

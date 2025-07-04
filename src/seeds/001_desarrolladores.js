@@ -1,41 +1,63 @@
+// SEED PARA DESARROLLADORES (actualizado con el equipo real)
 exports.seed = async function(knex) {
   // Limpiar tabla existente
   await knex('desarrolladores').del();
   
-  // Insertar datos de ejemplo
+  // Insertar desarrolladores reales del proyecto Registradep
   await knex('desarrolladores').insert([
     {
       id: 1,
-      nombre: 'Hugo Miguel Gallardo',
-      email: 'hugo.gallardo3@unmsm.edu.pe',
+      nombre: 'Joseph Ortega',
+      email: 'joseph.ortega@devdatep.com',
       es_lider: true,
       activo: true
     },
     {
       id: 2,
-      nombre: 'Valeria Mauricio',
-      email: 'valeria.mauricio@devdatep.com',
-      es_lider: true,
+      nombre: 'Luis Murrugarra',
+      email: 'luis.murrugarra@devdatep.com',
+      es_lider: true, // Co-líder
       activo: true
     },
     {
       id: 3,
-      nombre: 'Ana García López',
-      email: 'ana.garcia@devdatep.com',
+      nombre: 'Hugo Gallardo',
+      email: 'hugo.gallardo3@unmsm.edu.pe',
       es_lider: false,
       activo: true
     },
     {
       id: 4,
-      nombre: 'Carlos Rodriguez',
-      email: 'carlos.rodriguez@devdatep.com',
+      nombre: 'Diego de la Cruz',
+      email: 'diego.delacruz@devdatep.com',
       es_lider: false,
       activo: true
     },
     {
       id: 5,
-      nombre: 'María Fernández',
-      email: 'maria.fernandez@devdatep.com',
+      nombre: 'Christopher Valdiviezo',
+      email: 'christopher.valdiviezo@devdatep.com',
+      es_lider: false,
+      activo: true
+    },
+    {
+      id: 6,
+      nombre: 'Brelyn Jeri',
+      email: 'brelyn.jeri@devdatep.com',
+      es_lider: false,
+      activo: true
+    },
+    {
+      id: 7,
+      nombre: 'Bruce Cardenas',
+      email: 'bruce.cardenas@devdatep.com',
+      es_lider: false,
+      activo: true
+    },
+    {
+      id: 8,
+      nombre: 'Farith Tamayo',
+      email: 'farith.tamayo@devdatep.com',
       es_lider: false,
       activo: true
     }
