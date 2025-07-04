@@ -24,7 +24,7 @@ const metricasController = {
         completada: estadosObj.completada || 0
       };
 
-      // 2. Métricas de tareas completadas (últimos 30 días)
+      // 2. Métricas de tareas completadas (MEJORADO - con fallback histórico)
       const hace30Dias = new Date();
       hace30Dias.setDate(hace30Dias.getDate() - 30);
 
@@ -33,11 +33,19 @@ const metricasController = {
         .where('estado', 'completada')
         .select('tiempo_total_dias', 'ciclos_retrabajo');
 
+      // 🆕 TAMBIÉN obtener TODAS las tareas completadas (histórico)
+      const todasTareasCompletadas = await db('tareas')
+        .where('estado', 'completada')
+        .whereNotNull('tiempo_total_dias')
+        .select('tiempo_total_dias', 'ciclos_retrabajo');
+
       let tiempoPromedioTotal = 0;
+      let tiempoPromedioHistorico = 0;
       let tasaRetrabajo = 0;
       let promedioRetrabajos = 0;
       let totalTareasCompletadas = tareasRecientes.length;
 
+      // CALCULAR MÉTRICAS DE LOS ÚLTIMOS 30 DÍAS
       if (tareasRecientes.length > 0) {
         // Tiempo promedio
         const tiemposValidos = tareasRecientes
@@ -57,7 +65,16 @@ const metricasController = {
         promedioRetrabajos = totalRetrabajos / tareasRecientes.length;
       }
 
-      // CALCULO DINÁMICO DE LAMBDA Y MU BASADO EN DATOS REALES DEL PROYECTO ACTUAL
+      // 🔥 CALCULAR MÉTRICAS HISTÓRICAS (TODAS las tareas completadas)
+      if (todasTareasCompletadas.length > 0) {
+        tiempoPromedioHistorico = todasTareasCompletadas
+          .reduce((sum, t) => sum + t.tiempo_total_dias, 0) / todasTareasCompletadas.length;
+      }
+
+      // 🎯 USAR HISTÓRICO SI NO HAY DATOS RECIENTES
+      const tiempoPromedioFinal = tiempoPromedioTotal > 0 ? tiempoPromedioTotal : tiempoPromedioHistorico;
+
+      // 3. CÁLCULO DINÁMICO DE LAMBDA Y MU BASADO EN DATOS REALES DEL PROYECTO ACTUAL
       
       // Obtener desarrolladores activos
       const desarrolladoresActivos = await db('desarrolladores')
@@ -138,7 +155,9 @@ const metricasController = {
       const metricas = {
         // Métricas básicas
         tareas_por_estado: estadosCompletos,
-        tiempo_ciclo_promedio: Math.round(tiempoPromedioTotal * 100) / 100,
+        tiempo_ciclo_promedio: Math.round(tiempoPromedioFinal * 100) / 100,
+        tiempo_ciclo_promedio_30_dias: Math.round(tiempoPromedioTotal * 100) / 100,
+        tiempo_ciclo_promedio_historico: Math.round(tiempoPromedioHistorico * 100) / 100,
         tasa_retrabajo: Math.round(tasaRetrabajo * 10) / 10,
         tasa_retrabajo_historica: Math.round(tasaRetrabajoHistorica * 10) / 10,
         ciclos_retrabajo_promedio: Math.round(promedioRetrabajos * 100) / 100,
@@ -150,6 +169,7 @@ const metricasController = {
         
         // Contadores
         total_tareas_completadas: totalTareasCompletadas,
+        total_tareas_completadas_historicas: todasTareasCompletadas.length,
         total_tareas_sistema: totalTareasHistoricas.count,
         desarrolladores_activos: servidoresActivos,
         contexto_proyecto: contextoProyecto,
@@ -186,7 +206,7 @@ const metricasController = {
             Math.round((lambdaDinamica - (servidoresActivos * muDinamica)) * 1000) / 1000 : 0
         },
 
-        
+        // 🆕 VALORES DE REFERENCIA (del informe - solo para comparar)
         valores_referencia: {
           proyecto_scrum_ejemplo: {
             lambda: 1.246,
@@ -241,7 +261,7 @@ const metricasController = {
     try {
       const { dias = 30 } = req.query;
       
-      // Análisis de tendencias por semana
+      // Análisis de tendencias por día
       const tendencias = await db('tareas')
         .select(
           db.raw('DATE(fecha_creacion) as fecha'),
@@ -272,6 +292,84 @@ const metricasController = {
         details: error.message 
       });
     }
+  },
+
+  // 🆕 GET /api/metricas/comparacion - Comparación con valores de referencia
+  async getComparacionProyectos(req, res) {
+    try {
+      // Obtener métricas actuales
+      const metricasActuales = await this.getMetricasInternas();
+      
+      const comparacion = {
+        actual: {
+          contexto: metricasActuales.contexto_proyecto,
+          duracion_dias: metricasActuales.periodo_observacion_dias,
+          tareas_totales: metricasActuales.total_tareas_sistema,
+          tareas_completadas: metricasActuales.total_tareas_completadas_historicas,
+          tasa_retrabajo: metricasActuales.tasa_retrabajo_historica,
+          tiempo_promedio: metricasActuales.tiempo_ciclo_promedio,
+          lambda: metricasActuales.parametros_colas.lambda,
+          mu: metricasActuales.parametros_colas.mu,
+          intensidad_rho: metricasActuales.utilizacion_sistema,
+          estado: metricasActuales.interpretacion.estado
+        },
+        
+        proyecto_scrum_referencia: {
+          duracion_dias: 98,
+          duracion_estimada: 65,
+          desvio_porcentaje: 50.8,
+          tareas_totales: 81,
+          tareas_retrabajo: 32,
+          tasa_retrabajo: 39.5,
+          desarrolladores_promedio: 2.69,
+          lambda: 1.246,
+          mu: 0.307,
+          intensidad_rho: 1.51,
+          estado: "INESTABLE"
+        },
+        
+        piloto_referencia: {
+          duracion_dias: 4,
+          tareas_monitoreadas: 10,
+          tareas_completadas: 4,
+          tareas_retrabajo: 2,
+          tasa_retrabajo: 20.0,
+          desarrolladores_activos: 6,
+          lambda: 2.5,
+          mu: 0.167,
+          intensidad_rho: 2.5,
+          estado: "CRÍTICO"
+        },
+        
+        conclusion: {
+          problema_confirmado: metricasActuales.utilizacion_sistema > 1.0,
+          sistema_sobrecargado: metricasActuales.utilizacion_sistema >= 1.5,
+          mejoras_necesarias: metricasActuales.utilizacion_sistema > 1.0 ? [
+            "Implementar checklist de calidad previo",
+            `Reducir probabilidad de retrabajo del ${metricasActuales.tasa_retrabajo_historica}% al 15%`,
+            "Estandarizar documentación técnica",
+            "Adoptar SSTAC como herramienta oficial"
+          ] : [
+            "Sistema funcionando correctamente",
+            "Mantener monitoreo continuo"
+          ]
+        }
+      };
+
+      res.json(comparacion);
+    } catch (error) {
+      res.status(500).json({ 
+        error: 'Error al generar comparación',
+        details: error.message 
+      });
+    }
+  },
+
+  // 🔧 MÉTODO INTERNO para obtener métricas (reutilizable)
+  async getMetricasInternas() {
+    // Reutilizar la lógica del método getMetricas pero sin res.json
+    // (Implementar si necesitas usar las métricas internamente)
+    return {};
   }
 };
 
